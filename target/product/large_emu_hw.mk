@@ -24,7 +24,6 @@ PRODUCT_PACKAGES := \
     DeskClock \
     Bluetooth \
     Calculator \
-    Calendar \
     CertInstaller \
     Email \
     Exchange2 \
