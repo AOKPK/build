@@ -78,7 +78,7 @@ endif
 
 TARGET_NO_UNDEFINED_LDFLAGS := -Wl,--no-undefined
 
-TARGET_arm_CFLAGS :=    -O2 \
+TARGET_arm_CFLAGS :=    -O3 \
                         -fomit-frame-pointer \
                         -fstrict-aliasing \
                         -funswitch-loops \
@@ -90,7 +90,8 @@ TARGET_arm_CFLAGS :=    -O2 \
                         -fno-ipa-cp-clone \
                         -fno-vect-cost-model \
                         -Wno-error=unused-parameter \
-                        -Wno-error=unused-but-set-variable
+                        -Wno-error=unused-but-set-variable \
+                        -fgcse-las
 
 # Modules can choose to compile some source as thumb.
 TARGET_thumb_CFLAGS :=  -mthumb \
@@ -106,7 +107,8 @@ TARGET_thumb_CFLAGS :=  -mthumb \
                         -fno-ipa-cp-clone \
                         -fno-vect-cost-model \
                         -Wno-error=unused-parameter \
-                        -Wno-error=unused-but-set-variable
+                        -Wno-error=unused-but-set-variable \
+                        -fgcse-las
 
 # Turn off strict-aliasing if we're building an AOSP variant without the
 # patchset...
@@ -154,7 +156,8 @@ TARGET_GLOBAL_CFLAGS += \
 			-Wno-error=unused-parameter \
 			-Wno-error=unused-but-set-variable \
 			-include $(android_config_h) \
-			-I $(dir $(android_config_h))
+			-I $(dir $(android_config_h)) \
+            -fgcse-las
 
 # This warning causes dalvik not to build with gcc 4.6+ and -Werror.
 # We cannot turn it off blindly since the option is not available
@@ -203,7 +206,8 @@ TARGET_RELEASE_CFLAGS := \
 			-fno-ipa-cp-clone \
 			-fno-vect-cost-model \
 			-Wno-error=unused-parameter \
-			-Wno-error=unused-but-set-variable
+			-Wno-error=unused-but-set-variable \
+            -fgcse-las
 
 libc_root := bionic/libc
 libm_root := bionic/libm
