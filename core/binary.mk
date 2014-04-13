@@ -145,9 +145,11 @@ endif
 ############
 ## Graphite
 ############
-ifneq ($(strip $(LOCAL_DISABLE_GRAPHITE)),true)
-  LOCAL_CFLAGS += -fgraphite -floop-parallelize-all -ftree-loop-linear -floop-interchange -floop-strip-mine -floop-block
-  LOCAL_CPPFLAGS += -fgraphite -floop-parallelize-all -ftree-loop-linear -floop-interchange -floop-strip-mine -floop-block
+ifeq ($(strip $(ENABLE_GRAPHITE)),true)
+  ifneq ($(strip $(LOCAL_DISABLE_GRAPHITE)),true)
+    LOCAL_CFLAGS += -fgraphite -floop-parallelize-all -ftree-loop-linear -floop-interchange -floop-strip-mine -floop-block
+    LOCAL_CPPFLAGS += -fgraphite -floop-parallelize-all -ftree-loop-linear -floop-interchange -floop-strip-mine -floop-block
+  endif
 endif
 
 ###########################################################
