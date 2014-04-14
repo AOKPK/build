@@ -34,21 +34,30 @@ ifeq ($(strip $(TARGET_ARCH_VARIANT)),)
 TARGET_ARCH_VARIANT := armv5te
 endif
 
-ifeq ($(strip $(TARGET_GCC_VERSION_AND)),)
-TARGET_GCC_VERSION_AND := 4.7
-else
-TARGET_GCC_VERSION_AND := $(TARGET_GCC_VERSION_AND)
-endif
-
-ifeq ($(strip $(TARGET_GCC_VERSION_ARM)),)
-TARGET_GCC_VERSION_ARM := 4.7
-else
-TARGET_GCC_VERSION_ARM := $(TARGET_GCC_VERSION_ARM)
-endif
-
-# Specify Target Custom GCC Chains to use:
+ifndef GCC_VERSION_AND
 TARGET_GCC_VERSION_AND := 4.8
-TARGET_GCC_VERSION_ARM := 4.8
+else
+TARGET_GCC_VERSION_AND := $(GCC_VERSION_AND)
+endif
+
+ifndef GCC_VERSION_ARM
+TARGET_GCC_VERSION_ARM := $(TARGET_GCC_VERSION_AND)
+else
+TARGET_GCC_VERSION_ARM := $(GCC_VERSION_ARM)
+endif
+
+OPT_OS := -Os
+OPT_O2 := -O2
+OPT_O3 := -O3
+OPT_MEM := -fgcse-las
+ifneq ($(strip $(OPT_A_LOT)),true)
+OPT_MEM += -fpredictive-commoning
+endif
+
+# If fstrict-aliasing flag is global make warning level 3 automatic
+ifeq ($(strip $(MAKE_STRICT_GLOBAL)),true)
+STRICT_W_A_LOT := true
+endif
 
 TARGET_ARCH_SPECIFIC_MAKEFILE := $(BUILD_COMBOS)/arch/$(TARGET_ARCH)/$(TARGET_ARCH_VARIANT).mk
 ifeq ($(strip $(wildcard $(TARGET_ARCH_SPECIFIC_MAKEFILE))),)
@@ -78,43 +87,45 @@ endif
 
 TARGET_NO_UNDEFINED_LDFLAGS := -Wl,--no-undefined
 
-TARGET_arm_CFLAGS :=    -O3 \
-                        -fomit-frame-pointer \
+TARGET_arm_CFLAGS :=    -fomit-frame-pointer \
                         -fstrict-aliasing \
-                        -funswitch-loops \
+                        -funswitch-loops
+
+ifneq ($(strip $(OPT_A_LOT)),true)
+TARGET_arm_CFLAGS +=    $(OPT_O2)
+else
+TARGET_arm_CFLAGS +=    $(OPT_O3) \
                         -fno-tree-vectorize \
-                        -fno-inline-functions \
-                        -Wstrict-aliasing=3 \
-                        -Werror=strict-aliasing \
-                        -fgcse-after-reload \
-                        -fno-ipa-cp-clone \
-                        -fno-vect-cost-model \
-                        -Wno-error=unused-parameter \
-                        -Wno-error=unused-but-set-variable \
-                        -fgcse-las
+                        -fno-inline-functions
+endif
+
+ifeq ($(strip $(STRICT_W_A_LOT)),true)
+TARGET_arm_CFLAGS +=    -Wstrict-aliasing=3 \
+                        -Werror=strict-aliasing
+endif
+
+ifeq ($(strip $(OPT_MEMORY)),true)
+TARGET_arm_CFLAGS += $(OPT_MEM)
+endif
 
 # Modules can choose to compile some source as thumb.
 TARGET_thumb_CFLAGS :=  -mthumb \
-                        -Os \
                         -fomit-frame-pointer \
-                        -fstrict-aliasing \
-                        -fno-tree-vectorize \
-                        -fno-inline-functions \
-                        -fno-unswitch-loops \
-                        -Wstrict-aliasing=3 \
-                        -Werror=strict-aliasing \
-                        -fgcse-after-reload \
-                        -fno-ipa-cp-clone \
-                        -fno-vect-cost-model \
-                        -Wno-error=unused-parameter \
-                        -Wno-error=unused-but-set-variable \
-                        -fgcse-las
+                        $(OPT_OS)
 
-# Turn off strict-aliasing if we're building an AOSP variant without the
-# patchset...
-ifeq ($(DEBUG_NO_STRICT_ALIASING),yes)
-TARGET_arm_CFLAGS += -fno-strict-aliasing -Wno-error=strict-aliasing
-TARGET_thumb_CFLAGS += -fno-strict-aliasing -Wno-error=strict-aliasing
+ifneq  ($(strip $(MAKE_STRICT_GLOBAL)),true)
+TARGET_thumb_CFLAGS +=  -fno-strict-aliasing
+else
+TARGET_thumb_CFLAGS +=  -fstrict-aliasing
+endif
+
+ifeq ($(strip $(STRICT_W_A_LOT)),true)
+TARGET_thumb_CFLAGS +=  -Wstrict-aliasing=3 \
+                        -Werror=strict-aliasing
+endif
+
+ifeq ($(strip $(OPT_MEMORY)),true)
+TARGET_thumb_CFLAGS +=  $(OPT_MEM)
 endif
 
 # Set FORCE_ARM_DEBUGGING to "true" in your buildspec.mk
@@ -131,43 +142,42 @@ ifeq ($(FORCE_ARM_DEBUGGING),true)
   TARGET_thumb_CFLAGS += -marm -fno-omit-frame-pointer -fstrict-aliasing
 endif
 
-ifeq ($(TARGET_DISABLE_ARM_PIE),true)
-   PIE_GLOBAL_CFLAGS :=
-   PIE_EXECUTABLE_TRANSFORM :=
-else
-   PIE_GLOBAL_CFLAGS := -fPIE
-   PIE_EXECUTABLE_TRANSFORM := -fPIE -pie
-endif
-
 android_config_h := $(call select-android-config-h,linux-arm)
 
 TARGET_GLOBAL_CFLAGS += \
-			-msoft-float -fpic $(PIE_GLOBAL_CFLAGS) \
-			-ffunction-sections \
-			-fdata-sections \
-			-funwind-tables \
-			-fstrict-aliasing \
-			-fstack-protector \
-			-Wa,--noexecstack \
-			-Werror=format-security \
-			-D_FORTIFY_SOURCE=2 \
-			-fno-short-enums \
-			$(arch_variant_cflags) \
-			-Wno-error=unused-parameter \
-			-Wno-error=unused-but-set-variable \
-			-include $(android_config_h) \
-			-I $(dir $(android_config_h)) \
-            -fgcse-las
+            -msoft-float -fpic -fPIE \
+            -ffunction-sections \
+            -fdata-sections \
+            -funwind-tables \
+            -fstack-protector \
+            -Wa,--noexecstack \
+            -Werror=format-security \
+            -D_FORTIFY_SOURCE=2 \
+            -fno-short-enums \
+            $(arch_variant_cflags) \
+            -include $(android_config_h) \
+            -I $(dir $(android_config_h))
+
+ifeq  ($(strip $(MAKE_STRICT_GLOBAL)),true)
+TARGET_GLOBAL_CFLAGS += -fstrict-aliasing
+endif
+
+ifeq ($(strip $(STRICT_W_A_LOT)),true)
+TARGET_GLOBAL_CFLAGS += -Wstrict-aliasing=3 \
+                        -Werror=strict-aliasing
+endif
+
+ifeq ($(strip $(OPT_MEMORY)),true)
+TARGET_GLOBAL_CFLAGS += $(OPT_MEM)
+endif
 
 # This warning causes dalvik not to build with gcc 4.6+ and -Werror.
 # We cannot turn it off blindly since the option is not available
 # in gcc-4.4.x.  We also want to disable sincos optimization globally
 # by turning off the builtin sin function.
-ifneq ($(filter 4.6 4.6.% 4.7 4.7.% 4.8 4.8.% 4.9 4.9.% 4.10 4.10.%, $(TARGET_GCC_VERSION_AND)),)
-ifneq ($(filter 4.6 4.6.% 4.7 4.7.% 4.8 4.8.% 4.9 4.9.% 4.10 4.10.%, $(TARGET_GCC_VERSION_ARM)),)
-TARGET_GLOBAL_CFLAGS += -Wno-unused-but-set-variable -fstrict-aliasing -fno-builtin-sin \
-			-fno-strict-volatile-bitfields
-endif
+ifneq ($(filter 4.6 4.6.% 4.7 4.7.% 4.8 4.8.% 4.9 4.9.% 4.10 4.10.%, $(shell $(TARGET_CC) --version)),)
+TARGET_GLOBAL_CFLAGS += -Wno-unused-but-set-variable -fno-builtin-sin \
+            -fno-strict-volatile-bitfields
 endif
 
 # This is to avoid the dreaded warning compiler message:
@@ -178,7 +188,7 @@ endif
 # in their exported C++ functions). Also, GCC 4.5 has already
 # removed the warning from the compiler.
 #
-TARGET_GLOBAL_CFLAGS += -Wno-psabi -fstrict-aliasing
+TARGET_GLOBAL_CFLAGS += -Wno-psabi
 
 TARGET_GLOBAL_LDFLAGS += \
 			-Wl,-z,noexecstack \
@@ -189,25 +199,29 @@ TARGET_GLOBAL_LDFLAGS += \
 			-Wl,--icf=safe \
 			$(arch_variant_ldflags)
 
-TARGET_GLOBAL_CFLAGS += -mthumb-interwork -fstrict-aliasing
+TARGET_GLOBAL_CFLAGS += -mthumb-interwork
 
-TARGET_GLOBAL_CPPFLAGS += -fvisibility-inlines-hidden -fstrict-aliasing
+TARGET_GLOBAL_CPPFLAGS += -fvisibility-inlines-hidden
 
 # More flags/options can be added here
-TARGET_RELEASE_CFLAGS := \
-			-DNDEBUG \
-			-g \
-			-Wstrict-aliasing=3 \
-			-Werror=strict-aliasing \
-			-fstrict-aliasing \
-			-fgcse-after-reload \
-			-frerun-cse-after-loop \
-			-frename-registers \
-			-fno-ipa-cp-clone \
-			-fno-vect-cost-model \
-			-Wno-error=unused-parameter \
-			-Wno-error=unused-but-set-variable \
-            -fgcse-las
+TARGET_RELEASE_CFLAGS := -DNDEBUG \
+             -g \
+             -fgcse-after-reload \
+             -frerun-cse-after-loop \
+             -frename-registers
+
+ifeq  ($(strip $(MAKE_STRICT_GLOBAL)),true)
+TARGET_RELEASE_CFLAGS += -fstrict-aliasing
+endif
+
+ifeq ($(strip $(STRICT_W_A_LOT)),true)
+TARGET_RELEASE_CFLAGS += -Wstrict-aliasing=3 \
+                         -Werror=strict-aliasing
+endif
+
+ifeq ($(strip $(OPT_MEMORY)),true)
+TARGET_RELEASE_CFLAGS += $(OPT_MEM)
+endif
 
 libc_root := bionic/libc
 libm_root := bionic/libm

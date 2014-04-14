@@ -23,6 +23,14 @@
 # Build a target string like "linux-arm" or "darwin-x86".
 combo_os_arch := $($(combo_target)OS)-$($(combo_target)ARCH)
 
+OPT_OS := -Os
+OPT_O2 := -O2
+OPT_O3 := -O3
+OPT_MEM := -fgcse-las
+ifndef OPT_A_LOT
+OPT_MEM += -fpredictive-commoning
+endif
+
 # Set reasonable defaults for the various variables
 
 $(combo_target)CC := $(CC)
@@ -46,16 +54,25 @@ $(combo_target)HAVE_STRLCPY := 0
 $(combo_target)HAVE_STRLCAT := 0
 $(combo_target)HAVE_KERNEL_MODULES := 0
 
-$(combo_target)GLOBAL_CFLAGS := -fstrict-aliasing -Wstrict-aliasing=3 -Werror=strict-aliasing -fno-exceptions -Wno-multichar -Wno-error=unused-parameter -Wno-error=unused-but-set-variable
-$(combo_target)RELEASE_CFLAGS := -O3 -g -fstrict-aliasing -Wstrict-aliasing=3 -Werror=strict-aliasing -fno-tree-vectorize -fno-inline-functions -fno-unswitch-loops -fgcse-after-reload -fno-ipa-cp-clone -fno-vect-cost-model -Wno-error=unused-parameter -Wno-error=unused-but-set-variable -fgcse-las
+$(combo_target)GLOBAL_CFLAGS := -fno-exceptions -Wno-multichar
+ifndef OPT_A_LOT
+$(combo_target)RELEASE_CFLAGS := $(OPT_O2) -g
+else
+$(combo_target)RELEASE_CFLAGS := $(OPT_O3) -g -fno-tree-vectorize -fno-inline-functions -fno-unswitch-loops
+endif
+
+ifndef MAKE_STRICT_GLOBAL
+$(combo_target)RELEASE_CFLAGS += -fno-strict-aliasing
+else
+$(combo_target)RELEASE_CFLAGS += -fstrict-aliasing -Wstrict-aliasing=3 -Werror=strict-aliasing
+endif
+
+ifdef OPT_MEMORY
+$(combo_target)RELEASE_CFLAGS += $(OPT_MEM)
+endif
+
 $(combo_target)GLOBAL_LDFLAGS :=
 $(combo_target)GLOBAL_ARFLAGS := crsP
-
-# Turn off strict-aliasing if we're building an AOSP variant without the
-# patchset...
-ifeq ($(DEBUG_NO_STRICT_ALIASING),yes)
-$(combo_target)RELEASE_CFLAGS += -fno-strict-aliasing -Wno-error=strict-aliasing
-endif
 
 $(combo_target)EXECUTABLE_SUFFIX :=
 $(combo_target)SHLIB_SUFFIX := .so

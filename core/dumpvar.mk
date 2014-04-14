@@ -86,6 +86,26 @@ endif
 
 endif # CALLED_FROM_SETUP
 
+ifeq ($(strip $(OPT_A_LOT)),true)
+SPECIAL_FLAGS := -O3
+else
+SPECIAL_FLAGS := -O2
+endif
+
+ifeq ($(strip $(MAKE_STRICT_GLOBAL)),true)
+SPECIAL_FLAGS += -fstrict-aliasing
+endif
+
+ifeq ($(strip $(OPT_MEMORY)),true)
+SPECIAL_FLAGS += -fgcse-las
+ifneq ($(strip $(OPT_A_LOT)),true)
+SPECIAL_FLAGS += -fpredictive-commoning
+endif
+endif
+
+ifeq ($(strip $(ENABLE_GRAPHITE)),true)
+SPECIAL_FLAGS += -fgraphite
+endif
 
 ifneq ($(PRINT_BUILD_CONFIG),)
 HOST_OS_EXTRA:=$(shell python -c "import platform; print(platform.platform())")
@@ -101,17 +121,19 @@ endif
 $(info   TARGET_ARCH=$(TARGET_ARCH))
 $(info   TARGET_ARCH_VARIANT=$(TARGET_ARCH_VARIANT))
 $(info   TARGET_CPU_VARIANT=$(TARGET_CPU_VARIANT))
-$(info   TARGET_GCC_VERSION_ROM=$(TARGET_GCC_VERSION_AND))
-ifdef TARGET_KERNEL_CUSTOM_TOOLCHAIN
-$(info   TARGET_KERNEL_CUSTOM_TOOLCHAIN=$(ANDROID_BUILD_TOP)/prebuilts/gcc/linux-x86/arm/$(TARGET_KERNEL_CUSTOM_TOOLCHAIN))
-else
-$(info   TARGET_GCC_VERSION_KERNEL=$(ARM_EABI_TOOLCHAIN))
-endif
 $(info   HOST_ARCH=$(HOST_ARCH))
 $(info   HOST_OS=$(HOST_OS))
 $(info   HOST_OS_EXTRA=$(HOST_OS_EXTRA))
 $(info   HOST_BUILD_TYPE=$(HOST_BUILD_TYPE))
 $(info   BUILD_ID=$(BUILD_ID))
 $(info   OUT_DIR=$(OUT_DIR))
+$(info ============================================)
+$(info   GCC_VERSION_ROM=$(TARGET_GCC_VERSION_AND))
+ifdef TARGET_KERNEL_CUSTOM_TOOLCHAIN
+$(info   GCC_VERSION_KERNEL=$(TARGET_KERNEL_CUSTOM_TOOLCHAIN))
+else
+$(info   GCC_VERSION_KERNEL=$(TARGET_GCC_VERSION_ARM))
+endif
+$(info   ENABLED_GCC_FLAG_OPTIONS= $(SPECIAL_FLAGS))
 $(info ============================================)
 endif
