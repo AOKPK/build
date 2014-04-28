@@ -152,6 +152,23 @@ ifeq ($(strip $(ENABLE_GRAPHITE)),true)
   endif
 endif
 
+##############################
+## 4.10.0 strict aliasing fix
+##############################
+NO_STRICT_LIST := libvold libminivold libstlport_static libstlport libgui libnfc-nci libGLES_trace \
+            libhwui libnfc_nci_jni libRScpp libart libpac libjni_pacprocessor aapt libart-compiler \
+            dex2oat dalvikvm oatdump libdvm dexopt netd nfc_nci.flo libfilterfw_jni \
+            libfilterfw_native modp_b64 libstagefright_chromium_http libchromium_net \
+            libvariablespeed memtrack memtrack_share libwebrtc_apm nfc_nci.hammerhead
+
+ifeq ($(strip $(MAKE_STRICT_GLOBAL)),true)
+  ifneq ($(filter 4.10 4.10.%, $(shell $(TARGET_CC) --version)),)
+    ifneq ($(filter $(NO_STRICT_LIST),$(LOCAL_MODULE)),)
+      LOCAL_CFLAGS += -fno-strict-aliasing
+    endif
+  endif
+endif
+
 ###########################################################
 ## Explicitly declare assembly-only __ASSEMBLY__ macro for
 ## assembly source
