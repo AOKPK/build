@@ -152,6 +152,27 @@ ifeq ($(strip $(ENABLE_GRAPHITE)),true)
   endif
 endif
 
+########################
+## Unused-parameter fix
+########################
+NO_UNUSEDPARAMETER_LIST := mm-jpeg-interface-test libvoldclient libvold vold libminivold minivold \
+            vdc gralloc.msm8974 libmemalloc hwcomposer.msm8974 liboverlay
+
+ifneq ($(filter $(NO_UNUSEDPARAMETER_LIST),$(LOCAL_MODULE)),)
+  LOCAL_CFLAGS += -Wno-error=unused-parameter
+endif
+
+##############################
+## Global strict aliasing fix
+##############################
+NO_STRICT_LIST := libqcomvisualizer audio.primary.msm8974 audio.primary.msm8960 gralloc.msm8974
+
+ifeq ($(strip $(MAKE_STRICT_GLOBAL)),true)
+  ifneq ($(filter $(NO_STRICT_LIST),$(LOCAL_MODULE)),)
+    LOCAL_CFLAGS += -fno-strict-aliasing
+  endif
+endif
+
 ##############################
 ## 4.10.0 strict aliasing fix
 ##############################
