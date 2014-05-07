@@ -156,7 +156,7 @@ endif
 ## Unused-parameter fix
 ########################
 NO_UNUSEDPARAMETER_LIST := mm-jpeg-interface-test libvoldclient libvold vold libminivold minivold \
-            vdc gralloc.msm8974 libmemalloc hwcomposer.msm8974 liboverlay
+            vdc gralloc.msm8974 libmemalloc hwcomposer.msm8974 liboverlay libcorkscrew
 
 ifneq ($(filter $(NO_UNUSEDPARAMETER_LIST),$(LOCAL_MODULE)),)
   LOCAL_CFLAGS += -Wno-error=unused-parameter
@@ -165,7 +165,12 @@ endif
 ##############################
 ## Global strict aliasing fix
 ##############################
-NO_STRICT_LIST := libqcomvisualizer audio.primary.msm8974 audio.primary.msm8960 gralloc.msm8974
+NO_STRICT_LIST := libqcomvisualizer audio.primary.msm8974 audio.primary.msm8960 gralloc.msm8974 \
+            dnsmasq recovery_e2fsck libext2_blkid e2fsck libclangFrontend libclangARCMigrate \
+            libclangDriver libclangARCMigrate libclangSerialization libclangCodeGen libclangSema \
+            libclangRewriteFrontend libclangRewriteCore libclangParse libclangStaticAnalyzerFrontend \
+            libclangStaticAnalyzerCheckers libclangStaticAnalyzerCore libclangAnalysis libclangAST \
+            libclangEdit libext2_blkid_host mm-vdec-omx-test
 
 ifeq ($(strip $(MAKE_STRICT_GLOBAL)),true)
   ifneq ($(filter $(NO_STRICT_LIST),$(LOCAL_MODULE)),)
