@@ -127,6 +127,10 @@ $(info   HOST_OS_EXTRA=$(HOST_OS_EXTRA))
 $(info   HOST_BUILD_TYPE=$(HOST_BUILD_TYPE))
 $(info   BUILD_ID=$(BUILD_ID))
 $(info   OUT_DIR=$(OUT_DIR))
+ifneq ($(USE_CCACHE),)
+$(info   CCACHE_DIR=$(CCACHE_DIR))
+$(info   CCACHE_BASEDIR=$(CCACHE_BASEDIR))
+endif
 $(info ============================================)
 $(info   GCC_VERSION_ROM=$(TARGET_GCC_VERSION_AND))
 ifdef TARGET_KERNEL_CUSTOM_TOOLCHAIN
