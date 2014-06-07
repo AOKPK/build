@@ -52,6 +52,11 @@ Usage:  ota_from_target_files [flags] input_target_files output_ota_package
   -a  (--aslr_mode)  <on|off>
       Specify whether to turn on ASLR for the package (on by default).
 
+  -2  (--two_step)
+      Generate a 'two-step' OTA package, where recovery is updated
+      first, so that any changes made to the system partition are done
+      using the new recovery (new kernel, etc.).
+
   --override_device <device>
       Override device-specific asserts. Can be a comma-separated list.
 
@@ -64,11 +69,6 @@ Usage:  ota_from_target_files [flags] input_target_files output_ota_package
   --override_prop <boolean>
       Override build.prop items with custom vendor init.
       Enabled when TARGET_INIT_VENDOR_LIB is defined in BoardConfig
-
-  -2  (--two_step)
-      Generate a 'two-step' OTA package, where recovery is updated
-      first, so that any changes made to the system partition are done
-      using the new recovery (new kernel, etc.).
 
 """
 
@@ -106,11 +106,11 @@ OPTIONS.omit_prereq = False
 OPTIONS.extra_script = None
 OPTIONS.aslr_mode = True
 OPTIONS.worker_threads = 3
+OPTIONS.two_step = False
 OPTIONS.override_device = 'auto'
 OPTIONS.persist = True
 OPTIONS.no_assert = False
 OPTIONS.override_prop = False
-OPTIONS.two_step = False
 
 def MostPopularKey(d, default):
   """Given a dict, return the key corresponding to the largest
@@ -513,7 +513,6 @@ set_stage("%(bcb_dev)s", "3/3");
 reboot_now("%(bcb_dev)s", "recovery");
 else if get_stage("%(bcb_dev)s", "stage") == "3/3" then
 """ % bcb_dev)
->>>>>>> android-4.4.3_r1.1
 
   device_specific.FullOTA_InstallBegin()
 
@@ -1042,6 +1041,8 @@ def main(argv):
         OPTIONS.aslr_mode = True
       else:
         OPTIONS.aslr_mode = False
+    elif o in ("-2", "--two_step"):
+      OPTIONS.two_step = True
     elif o in ("--override_device"):
       OPTIONS.override_device = a
     elif o in ("--persist"):
@@ -1050,8 +1051,6 @@ def main(argv):
       OPTIONS.worker_threads = int(a)
     elif o in ("--override_prop"):
       OPTIONS.override_prop = bool(a.lower() == 'true')
-    elif o in ("-2", "--two_step"):
-      OPTIONS.two_step = True
     else:
       return False
     return True
@@ -1067,10 +1066,10 @@ def main(argv):
                                               "extra_script=",
                                               "worker_threads=",
                                               "aslr_mode=",
+                                              "two_step",
                                               "override_device=",
                                               "persist=",
                                               "override_prop=",
-                                              "two_step",
                                               ],
                              extra_option_handler=option_handler)
 
