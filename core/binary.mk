@@ -156,7 +156,8 @@ endif
 ## Unused-parameter fix
 ########################
 NO_UNUSEDPARAMETER_LIST := mm-jpeg-interface-test libvoldclient libvold vold libminivold minivold \
-            vdc gralloc.msm8974 libmemalloc hwcomposer.msm8974 liboverlay libcorkscrew
+            vdc gralloc.msm8974 libmemalloc hwcomposer.msm8974 liboverlay libcorkscrew \
+            libqdMetaData copybit.msm8960 gralloc.msm8960 hwcomposer.msm8960 libgenlock
 
 ifneq ($(filter $(NO_UNUSEDPARAMETER_LIST),$(LOCAL_MODULE)),)
   LOCAL_CFLAGS += -Wno-error=unused-parameter
