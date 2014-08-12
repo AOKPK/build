@@ -172,7 +172,8 @@ NO_STRICT_LIST := libqcomvisualizer audio.primary.msm8974 audio.primary.msm8960 
             libclangRewriteFrontend libclangRewriteCore libclangParse libclangStaticAnalyzerFrontend \
             libclangStaticAnalyzerCheckers libclangStaticAnalyzerCore libclangAnalysis libclangAST \
             libclangEdit libext2_blkid_host mm-vdec-omx-test libsurfaceflinger libaudioflinger \
-            libmedia libmediaplayerservice libstagefright libdownmix libldnhncr libvisualizer
+            libmedia libmediaplayerservice libstagefright libdownmix libldnhncr libvisualizer \
+            libqsap_sdk libOmxVenc
 
 ifeq ($(strip $(MAKE_STRICT_GLOBAL)),true)
   ifneq ($(filter $(NO_STRICT_LIST),$(LOCAL_MODULE)),)
