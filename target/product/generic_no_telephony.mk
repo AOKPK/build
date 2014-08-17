@@ -23,12 +23,10 @@ PRODUCT_PACKAGES := \
     DeskClock \
     Bluetooth \
     Calculator \
-    Camera2 \
     CertInstaller \
     Email \
     Exchange2 \
     FusedLocation \
-    Gallery2 \
     InputDevices \
     Keyguard \
     LatinIME \
