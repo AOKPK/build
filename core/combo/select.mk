@@ -71,7 +71,11 @@ ifdef OPT_MEMORY
 $(combo_target)RELEASE_CFLAGS += $(OPT_MEM)
 endif
 
+ifeq ($(OPTIMIZE_LINKER),true)
+$(combo_target)GLOBAL_LDFLAGS := -Wl,-O1 -Wl,--as-needed -Wl,--relax -Wl,--sort-common -Wl,--gc-sections
+else
 $(combo_target)GLOBAL_LDFLAGS :=
+endif
 $(combo_target)GLOBAL_ARFLAGS := crsP
 
 $(combo_target)EXECUTABLE_SUFFIX :=
