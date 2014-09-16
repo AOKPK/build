@@ -152,6 +152,15 @@ ifeq ($(strip $(ENABLE_GRAPHITE)),true)
   endif
 endif
 
+#######################
+## frameworks_rs fix
+#######################
+NO_UNUSEDARGUMENT_LIST := libRS libRSDriver libRSCpuRef
+
+ifneq ($(filter $(NO_UNUSEDARGUMENT_LIST),$(LOCAL_MODULE)),)
+  LOCAL_CFLAGS += -Wno-error -Qunused-arguments
+endif
+
 ########################
 ## Unused-parameter fix
 ########################
