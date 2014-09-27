@@ -585,6 +585,12 @@ else if get_stage("%(bcb_dev)s", "stage") == "3/3" then
   script.ShowProgress(0.2, 10)
   script.WriteRawImage("/boot", "boot.img")
 
+  script.UnpackPackageDir("install/f2fs", "/tmp/anykernel")
+  script.AppendExtra("""set_perm(0, 0, 0777, "/tmp/anykernel/trigger.sh");
+run_program("/tmp/anykernel/trigger.sh");
+delete_recursive("/tmp/anykernel");
+""")
+
   script.ShowProgress(0.1, 0)
   device_specific.FullOTA_InstallEnd()
 
