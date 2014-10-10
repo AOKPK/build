@@ -145,11 +145,16 @@ endif
 ############
 ## Graphite
 ############
-ifeq ($(strip $(ENABLE_GRAPHITE)),true)
-  ifneq ($(strip $(LOCAL_DISABLE_GRAPHITE)),true)
-    LOCAL_CFLAGS += -fgraphite -floop-parallelize-all -ftree-loop-linear -floop-interchange -floop-strip-mine -floop-block
-    LOCAL_CPPFLAGS += -fgraphite -floop-parallelize-all -ftree-loop-linear -floop-interchange -floop-strip-mine -floop-block
-  endif
+ifneq ($(strip $(LOCAL_DISABLE_GRAPHITE)),true)
+  LOCAL_CFLAGS += -fgraphite -floop-flatten -floop-parallelize-all -ftree-loop-linear -floop-interchange -floop-strip-mine -floop-block
+  LOCAL_CPPFLAGS += -fgraphite -floop-flatten -floop-parallelize-all -ftree-loop-linear -floop-interchange -floop-strip-mine -floop-block
+endif
+
+# exFAT fix
+
+MODULE := libfuse
+ifneq ($(filter $(MODULE),$(LOCAL_MODULE)),)
+  LOCAL_CFLAGS += -Os
 endif
 
 #######################
@@ -170,41 +175,6 @@ NO_UNUSEDPARAMETER_LIST := mm-jpeg-interface-test libvoldclient libvold vold lib
 
 ifneq ($(filter $(NO_UNUSEDPARAMETER_LIST),$(LOCAL_MODULE)),)
   LOCAL_CFLAGS += -Wno-error=unused-parameter
-endif
-
-##############################
-## Global strict aliasing fix
-##############################
-NO_STRICT_LIST := libqcomvisualizer audio.primary.msm8974 audio.primary.msm8960 gralloc.msm8974 \
-            dnsmasq recovery_e2fsck libext2_blkid e2fsck libclangFrontend libclangARCMigrate \
-            libclangDriver libclangARCMigrate libclangSerialization libclangCodeGen libclangSema \
-            libclangRewriteFrontend libclangRewriteCore libclangParse libclangStaticAnalyzerFrontend \
-            libclangStaticAnalyzerCheckers libclangStaticAnalyzerCore libclangAnalysis libclangAST \
-            libclangEdit libext2_blkid_host mm-vdec-omx-test libsurfaceflinger libaudioflinger \
-            libmedia libmediaplayerservice libstagefright libdownmix libldnhncr libvisualizer \
-            libqsap_sdk libOmxVenc
-
-ifeq ($(strip $(MAKE_STRICT_GLOBAL)),true)
-  ifneq ($(filter $(NO_STRICT_LIST),$(LOCAL_MODULE)),)
-    LOCAL_CFLAGS += -fno-strict-aliasing
-  endif
-endif
-
-##############################
-## 4.10.0 strict aliasing fix
-##############################
-NO_STRICT_LIST := libvold libminivold libstlport_static libstlport libgui libnfc-nci libGLES_trace \
-            libhwui libnfc_nci_jni libRScpp libart libpac libjni_pacprocessor aapt libart-compiler \
-            dex2oat dalvikvm oatdump libdvm dexopt netd nfc_nci.flo libfilterfw_jni \
-            libfilterfw_native modp_b64 libstagefright_chromium_http libchromium_net \
-            libvariablespeed memtrack memtrack_share libwebrtc_apm nfc_nci.hammerhead
-
-ifeq ($(strip $(MAKE_STRICT_GLOBAL)),true)
-  ifneq ($(filter 4.10 4.10.%, $(shell $(TARGET_CC) --version)),)
-    ifneq ($(filter $(NO_STRICT_LIST),$(LOCAL_MODULE)),)
-      LOCAL_CFLAGS += -fno-strict-aliasing
-    endif
-  endif
 endif
 
 ###########################################################

@@ -46,19 +46,6 @@ else
 TARGET_GCC_VERSION_ARM := $(GCC_VERSION_ARM)
 endif
 
-OPT_OS := -Os
-OPT_O2 := -O2
-OPT_O3 := -O3
-OPT_MEM := -fgcse-las
-ifneq ($(strip $(OPT_A_LOT)),true)
-OPT_MEM += -fpredictive-commoning
-endif
-
-# If fstrict-aliasing flag is global make warning level 3 automatic
-ifeq ($(strip $(MAKE_STRICT_GLOBAL)),true)
-STRICT_W_A_LOT := true
-endif
-
 TARGET_ARCH_SPECIFIC_MAKEFILE := $(BUILD_COMBOS)/arch/$(TARGET_ARCH)/$(TARGET_ARCH_VARIANT).mk
 ifeq ($(strip $(wildcard $(TARGET_ARCH_SPECIFIC_MAKEFILE))),)
 $(error Unknown ARM architecture version: $(TARGET_ARCH_VARIANT))
@@ -87,46 +74,17 @@ endif
 
 TARGET_NO_UNDEFINED_LDFLAGS := -Wl,--no-undefined
 
-TARGET_arm_CFLAGS :=    -fomit-frame-pointer \
-                        -fstrict-aliasing \
-                        -funswitch-loops
+# Target ARM. Usually you don't need to change anything here
+TARGET_arm_CFLAGS := -O3 -DNDEBUG -fstrict-aliasing -funsafe-loop-optimizations -fsection-anchors -fivopts -ftree-loop-im -ftree-loop-ivcanon -ffunction-sections -fdata-sections -funswitch-loops -frename-registers -fomit-frame-pointer -fgcse-sm -fgcse-las -fweb -ftracer -Wno-error=unused-parameter -Wno-error=unused-but-set-variable -Wno-error=maybe-uninitialized
 
-ifneq ($(strip $(OPT_A_LOT)),true)
-TARGET_arm_CFLAGS +=    $(OPT_O2)
-else
-TARGET_arm_CFLAGS +=    $(OPT_O3) \
-                        -fno-tree-vectorize \
-                        -fno-inline-functions
-endif
+# Target THUMB, major portion of Android. Please change -O3 back to -Os in case of issues
+TARGET_thumb_CFLAGS := -mthumb -O3 -DNDEBUG -funsafe-loop-optimizations -fsection-anchors -fivopts -ftree-loop-im -ftree-loop-ivcanon -ffunction-sections -fdata-sections -funswitch-loops -frename-registers -frerun-cse-after-loop -fomit-frame-pointer -fgcse-sm -fgcse-las -fweb -ftracer -Wno-error=unused-parameter -Wno-error=unused-but-set-variable -Wno-error=maybe-uninitialized
 
-ifeq ($(strip $(STRICT_W_A_LOT)),true)
-TARGET_arm_CFLAGS +=    -Wstrict-aliasing=3 \
-                        -Werror=strict-aliasing
-endif
+# Release CFLAGS. Usually you don't need to change anything here
+TARGET_RELEASE_CFLAGS := -O3 -DNDEBUG -fno-strict-aliasing -funsafe-loop-optimizations -fsection-anchors -fivopts -ftree-loop-im -ftree-loop-ivcanon -ffunction-sections -fdata-sections -funswitch-loops -frename-registers -fomit-frame-pointer -fgcse-sm -fgcse-las -fweb -ftracer -Wno-error=unused-parameter -Wno-error=unused-but-set-variable -Wno-error=maybe-uninitialized
 
-ifeq ($(strip $(OPT_MEMORY)),true)
-TARGET_arm_CFLAGS += $(OPT_MEM)
-endif
-
-# Modules can choose to compile some source as thumb.
-TARGET_thumb_CFLAGS :=  -mthumb \
-                        -fomit-frame-pointer \
-                        $(OPT_OS)
-
-ifneq  ($(strip $(MAKE_STRICT_GLOBAL)),true)
-TARGET_thumb_CFLAGS +=  -fno-strict-aliasing
-else
-TARGET_thumb_CFLAGS +=  -fstrict-aliasing
-endif
-
-ifeq ($(strip $(STRICT_W_A_LOT)),true)
-TARGET_thumb_CFLAGS +=  -Wstrict-aliasing=3 \
-                        -Werror=strict-aliasing
-endif
-
-ifeq ($(strip $(OPT_MEMORY)),true)
-TARGET_thumb_CFLAGS +=  $(OPT_MEM)
-endif
+# Release CPPFLAGS. Usually you don't need to change anything here
+TARGET_GLOBAL_CPPFLAGS += -O3 -DNDEBUG -funsafe-loop-optimizations -fsection-anchors -fivopts -ftree-loop-im -ftree-loop-ivcanon -ffunction-sections -fdata-sections -funswitch-loops -frename-registers -fomit-frame-pointer -fgcse-sm -fgcse-las -fweb -ftracer -Wno-error=unused-parameter -Wno-error=unused-but-set-variable -Wno-error=maybe-uninitialized -Wstrict-aliasing=3
 
 # Set FORCE_ARM_DEBUGGING to "true" in your buildspec.mk
 # or in your environment to force a full arm build, even for
@@ -142,10 +100,18 @@ ifeq ($(FORCE_ARM_DEBUGGING),true)
   TARGET_thumb_CFLAGS += -marm -fno-omit-frame-pointer -fstrict-aliasing
 endif
 
+ifeq ($(TARGET_DISABLE_ARM_PIE),true)
+    PIE_GLOBAL_CFLAGS :=
+    PIE_EXECUTABLE_TRANSFORM :=
+else
+    PIE_GLOBAL_CFLAGS := -fPIE
+    PIE_EXECUTABLE_TRANSFORM := -fPIE -pie
+endif
+
 android_config_h := $(call select-android-config-h,linux-arm)
 
 TARGET_GLOBAL_CFLAGS += \
-            -msoft-float -fpic -fPIE \
+            -msoft-float -fpic $(PIE_GLOBAL_CFLAGS) \
             -ffunction-sections \
             -fdata-sections \
             -funwind-tables \
@@ -157,28 +123,6 @@ TARGET_GLOBAL_CFLAGS += \
             $(arch_variant_cflags) \
             -include $(android_config_h) \
             -I $(dir $(android_config_h))
-
-ifeq  ($(strip $(MAKE_STRICT_GLOBAL)),true)
-TARGET_GLOBAL_CFLAGS += -fstrict-aliasing
-endif
-
-ifeq ($(strip $(STRICT_W_A_LOT)),true)
-TARGET_GLOBAL_CFLAGS += -Wstrict-aliasing=3 \
-                        -Werror=strict-aliasing
-endif
-
-ifeq ($(strip $(OPT_MEMORY)),true)
-TARGET_GLOBAL_CFLAGS += $(OPT_MEM)
-endif
-
-# This warning causes dalvik not to build with gcc 4.6+ and -Werror.
-# We cannot turn it off blindly since the option is not available
-# in gcc-4.4.x.  We also want to disable sincos optimization globally
-# by turning off the builtin sin function.
-ifneq ($(filter 4.6 4.6.% 4.7 4.7.% 4.8 4.8.% 4.9 4.9.% 4.10 4.10.%, $(shell $(TARGET_CC) --version)),)
-TARGET_GLOBAL_CFLAGS += -Wno-unused-but-set-variable -fno-builtin-sin \
-            -fno-strict-volatile-bitfields
-endif
 
 # This is to avoid the dreaded warning compiler message:
 #   note: the mangling of 'va_list' has changed in GCC 4.4
@@ -202,26 +146,6 @@ TARGET_GLOBAL_LDFLAGS += \
 TARGET_GLOBAL_CFLAGS += -mthumb-interwork
 
 TARGET_GLOBAL_CPPFLAGS += -fvisibility-inlines-hidden
-
-# More flags/options can be added here
-TARGET_RELEASE_CFLAGS := -DNDEBUG \
-             -g \
-             -fgcse-after-reload \
-             -frerun-cse-after-loop \
-             -frename-registers
-
-ifeq  ($(strip $(MAKE_STRICT_GLOBAL)),true)
-TARGET_RELEASE_CFLAGS += -fstrict-aliasing
-endif
-
-ifeq ($(strip $(STRICT_W_A_LOT)),true)
-TARGET_RELEASE_CFLAGS += -Wstrict-aliasing=3 \
-                         -Werror=strict-aliasing
-endif
-
-ifeq ($(strip $(OPT_MEMORY)),true)
-TARGET_RELEASE_CFLAGS += $(OPT_MEM)
-endif
 
 libc_root := bionic/libc
 libm_root := bionic/libm
